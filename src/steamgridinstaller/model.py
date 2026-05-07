@@ -609,3 +609,154 @@ class AssetResponse(NamedTuple):
 			raise ValueError("asset response missing required property 'data'")
 		
 		return AssetResponse(raw["success"], AssetResponseData.fromJSON(raw["data"]))
+
+class SteamPrice(NamedTuple):
+	currency: str
+	initial: int
+	final: int
+
+	@staticmethod
+	def fromJSON(raw: object) -> SteamPrice:
+		if not isinstance(raw, dict):
+			raise TypeError("non-object given as steam game price")
+		if len(raw) != 3:
+			raise ValueError(f"invalid number of properties in steam game price; expected: 3, got: {len(raw)}")
+
+		if "currency" not in raw:
+			raise ValueError("steam game price missing required property 'currency'")
+		if not isinstance(raw["currency"], str):
+			raise TypeError("invalid type for 'currency' property of steam game price")
+
+		if "initial" not in raw:
+			raise ValueError("steam game price missing required property 'initial'")
+		if not isinstance(raw["initial"], int):
+			raise TypeError("invalid type for 'initial' property of steam game price")
+
+		if "final" not in raw:
+			raise ValueError("steam game price missing required property 'final'")
+		if not isinstance(raw["final"], int):
+			raise TypeError("invalid type for 'final' property of steam game price")
+
+		return SteamPrice(raw["currency"], raw["initial"], raw["final"])
+
+class SteamPlatforms(NamedTuple):
+	windows: bool
+	mac: bool
+	linux: bool
+
+	@staticmethod
+	def fromJSON(raw: object) -> SteamPlatforms:
+		if not isinstance(raw, dict):
+			raise TypeError("non-object given as steam game platforms")
+		if len(raw) != 3:
+			raise ValueError(f"invalid number of properties in steam game platforms; expected: 3, got: {len(raw)}")
+
+		if "windows" not in raw: 
+			raise ValueError("steam game platforms missing required property 'windows'")
+		if not isinstance(raw["windows"], bool):
+			raise TypeError("invalid type for 'windows' property of steam game platforms")
+
+		if "mac" not in raw: 
+			raise ValueError("steam game platforms missing required property 'mac'")
+		if not isinstance(raw["mac"], bool):
+			raise TypeError("invalid type for 'mac' property of steam game platforms")
+
+		if "linux" not in raw: 
+			raise ValueError("steam game platforms missing required property 'linux'")
+		if not isinstance(raw["linux"], bool):
+			raise TypeError("invalid type for 'linux' property of steam game platforms")
+
+		return SteamPlatforms(raw["windows"], raw["mac"], raw["linux"])
+
+class SteamItem(NamedTuple):
+	type: str
+	name: str
+	id: int
+	price: SteamPrice
+	tinyImage: str
+	metascore: str
+	platforms: SteamPlatforms
+	streamingVideo: bool
+
+	@staticmethod
+	def fromJSON(raw: object) -> SteamItem:
+		if not isinstance(raw, dict):
+			raise TypeError("non-object given as steam item")
+		if len(raw) != 8:
+			raise ValueError(f"invalid number of properties in steam item; expected: 8, got: {len(raw)}")
+
+		if "type" not in raw:
+			raise ValueError("steam item missing required property 'type'")
+		if not isinstance(raw["type"], str):
+			raise TypeError("invalid type for 'type' property of steam item")
+
+		if "name" not in raw:
+			raise ValueError("steam item missing required property 'name'")
+		if not isinstance(raw["name"], str):
+			raise TypeError("invalid type for 'name' property of steam item")
+
+		if "id" not in raw:
+			raise ValueError("steam item missing required property 'id'")
+		if not isinstance(raw["id"], int):
+			raise TypeError("invalid type for 'id' property of steam item")
+
+		if "price" not in raw:
+			raise ValueError("steam item missing required property 'price'")
+
+		if "tiny_image" not in raw:
+			raise ValueError("steam item missing required property 'tiny_image'")
+		if not isinstance(raw["tiny_image"], str):
+			raise TypeError("invalid type for 'tiny_image' property of steam item")
+
+		if "metascore" not in raw:
+			raise ValueError("steam item missing required property 'metascore'")
+		if not isinstance(raw["metascore"], str):
+			raise TypeError("invalid type for 'metascore' property of steam item")
+
+		if "platforms" not in raw:
+			raise ValueError("steam item missing required property 'platforms'")
+
+		if "streamingvideo" not in raw:
+			raise ValueError("steam item missing required property 'streamingvideo'")
+		if not isinstance(raw["streamingvideo"], bool):
+			raise TypeError("invalid type for 'streamingvideo' property of steam item")
+
+		return SteamItem(
+			raw["type"],
+			raw["name"],
+			raw["id"],
+			SteamPrice.fromJSON(raw["price"]),
+			raw["tiny_image"],
+			raw["metascore"],
+			SteamPlatforms.fromJSON(raw["platforms"]),
+			raw["streamingvideo"],
+		)
+
+class SteamItemsResponse(NamedTuple):
+	total: int
+	items: list[SteamItem]
+
+	@staticmethod
+	def fromJSON(raw: object) -> SteamItemsResponse:
+		if not isinstance(raw, dict):
+			raise TypeError("non-object given as asset response")
+		if len(raw) != 2:
+			raise ValueError(f"invalid number of properties in response; expected: 2, got: {len(raw)}")
+
+		if "total" not in raw:
+			raise ValueError("steam items response missing required property 'total'")
+		if not isinstance(raw["total"], int):
+			raise TypeError("invalid type for 'total' property of steam items response")
+
+		if "items" not in raw:
+			raise ValueError("steam items response missing required property 'items'")
+		if not isinstance(raw["items"], list):
+			raise TypeError("invalid type for 'items' property of steam items response")
+		items = list[SteamItem]()
+		for i, item in enumerate(raw["items"]):
+			try:
+				items.append(SteamItem.fromJSON(item))
+			except (ValueError, TypeError) as e:
+				raise TypeError(f"invalid steam item at index {i}: {e}") from e
+
+		return SteamItemsResponse(raw["total"], items)

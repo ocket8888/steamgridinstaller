@@ -3,6 +3,8 @@
 import sys
 from argparse import ArgumentParser
 
+import requests
+
 from .api import getAssets, ParseError, RequestError
 
 def main() -> int:
@@ -18,8 +20,12 @@ def main() -> int:
 		print(e, file=sys.stderr)
 		return 2
 
-	for asset in assets:
-		print(asset.game.name, f"(#{asset.game.id})", f"{asset.height}x{asset.width}")
+	for asset, item in assets:
+		dims = f"{asset.height}x{asset.width}"
+		if item is None:
+			print(asset.game.name, "NON-STEAM", dims)
+		else:
+			print(asset.game.name, f"(#{item.id})", dims)
 
 	return 0
 
