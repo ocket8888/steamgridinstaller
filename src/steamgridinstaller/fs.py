@@ -51,12 +51,14 @@ def locateOrCreateGridFolder(start: str) -> str:
 
 	return found
 
-def writeAsset(asset: Asset, id: int, dir: str):
+def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
 	"""
 	Writes the given asset to a steam grid file.
 	"""
 	fname = os.path.join(dir, f"{id}")
-	if asset.width == 600 and asset.height == 900:
+	if isLogo:
+		fname = f"{fname}_logo"
+	elif asset.width == 600 and asset.height == 900:
 		fname = f"{fname}p"
 	elif (asset.width == 3840 and asset.height == 1240) or (asset.width == 1920 and asset.height == 620):
 		fname = f"{fname}_hero"
