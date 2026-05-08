@@ -58,7 +58,9 @@ def writeAsset(asset: Asset, id: int, dir: str):
 	fname = os.path.join(dir, f"{id}")
 	if asset.width == 600 and asset.height == 900:
 		fname = f"{fname}p"
-	else:
+	elif (asset.width == 3840 and asset.height == 1240) or (asset.width == 1920 and asset.height == 620):
+		fname = f"{fname}_hero"
+	elif (asset.width != 920 or asset.height != 430) and (asset.width != 460 or asset.height != 215):
 		raise WriteAssetError(f"unsupported dimensions for game asset: {asset.height}x{asset.width}")
 	
 	try:
