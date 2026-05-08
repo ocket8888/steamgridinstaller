@@ -1,6 +1,7 @@
 import json
 import sys
 from typing import Final, Literal
+from difflib import SequenceMatcher
 
 import requests
 
@@ -15,6 +16,17 @@ class ParseError(ValueError):
 	"""
 	Represents an error that occurred parsing a response from the API.
 	"""
+
+def _editDistance(a: str, b: str) -> int:
+	"""
+	Calculates the edit distance between a and b.
+	"""
+	dist = 0
+	for code in SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
+		if code[0] != "equal":
+			++dist
+	
+	return dist
 
 _STEAM_CACHE: Final[dict[str, SteamItem]] = {}
 
@@ -33,19 +45,27 @@ def getSteamGameInfo(name: str) -> SteamItem:
 	except (ValueError, TypeError) as e:
 		raise ParseError(f"failed to parse response for steam game info request for '{name}': {e}") from e
 
+	nm = name.casefold()
 	item: SteamItem | None = None
+	minDist = float("inf")
 	for itm in parsed.items:
-		if itm.name == name:
-			if item is not None:
+		iname = itm.name.casefold()
+		if iname == nm:
+			if item is not None and item.name.casefold() == nm:
 				raise ValueError(f"duplicate items found with name '{name}'")
 			item = itm
+			minDist = -1
+		else:
+			editDist = _editDistance(iname, nm)
+			if editDist < minDist:
+				minDist = editDist
+				item = itm
 
 	if item is None:
-		if len(parsed.items) > 0:
-			print("Warning: selecting an arbitrary entry for game '", name, "' with no exact match found", sep="", file=sys.stderr)
-			item = parsed.items[0]
-		else:
-			raise ValueError(f"no steam game found by name '{name}'")
+		raise ValueError(f"no steam game found by name '{name}'")
+	
+	if item.name.casefold() != nm:
+		print("Warning: selecting best match for", f"'{name}':", item.name)
 
 	_STEAM_CACHE[name] = item
 
