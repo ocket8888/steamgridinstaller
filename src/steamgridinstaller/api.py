@@ -5,7 +5,7 @@ from difflib import SequenceMatcher
 
 import requests
 
-from .model import Asset, AssetRequest, AssetResponse, SteamItem, SteamItemsResponse
+from .model import Asset, AssetRequest, AssetResponse, SteamItem, SteamItemsResponse, SteamPlatforms
 
 class RequestError(Exception):
 	"""
@@ -30,12 +30,27 @@ def _editDistance(a: str, b: str) -> int:
 
 _STEAM_CACHE: Final[dict[str, SteamItem]] = {}
 
-def getSteamGameInfo(name: str) -> SteamItem:
+def getSteamGameInfo(name: str, overrides: dict[str, int]) -> SteamItem:
 	"""
 	gets the steam info for a game given its name
 	"""
 	if name in _STEAM_CACHE:
 		return _STEAM_CACHE[name]
+
+	if name in overrides:
+		ret = SteamItem(
+			"app",
+			name,
+			overrides[name],
+			None,
+			"OVERRIDDEN",
+			"",
+			SteamPlatforms(False, False, False),
+			False,
+			None,
+		)
+		_STEAM_CACHE[name] = ret
+		return ret
 
 	try:
 		response = requests.get(f"https://store.steampowered.com/api/storesearch/?term={name.replace(" ", "+")}&l=english&cc=US")
@@ -71,7 +86,7 @@ def getSteamGameInfo(name: str) -> SteamItem:
 
 	return item
 
-def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"]) -> list[tuple[Asset, SteamItem | None]]:
+def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"], overrides: dict[str, int]) -> list[tuple[Asset, SteamItem | None]]:
 	data = AssetRequest(collectionID, typ, 0, 0, None, None)
 	try:
 		response = requests.post("https://www.steamgriddb.com/api/public/search/assets", json=data._asdict())
@@ -88,7 +103,7 @@ def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"]) -> list[t
 	for asset in parsed.data.assets:
 		item: SteamItem | None = None
 		try:
-			item = getSteamGameInfo(asset.game.name)
+			item = getSteamGameInfo(asset.game.name, overrides)
 		except (ValueError) as e:
 			print("skipping apparent non-steam game '", asset.game.name, "': ", e, file=sys.stderr, sep="")
 
