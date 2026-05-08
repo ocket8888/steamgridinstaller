@@ -7,6 +7,7 @@ from .model import Asset
 
 _MIME_EXT_MAP: Final[dict[str, str]] = {
 	"image/png": ".png",
+	"image/webp": ".png",
 	"image/jpg": ".jpg",
 	"image/jpeg": ".jpg",
 }
@@ -70,8 +71,14 @@ def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
 	except TypeError as e:
 		raise WriteAssetError(f"failed to get extension from mime type '{asset.mime}': {e}") from e
 	
+	url = asset.url
+	if asset.animationType == "WebP":
+		if asset.fakePng is None:
+			raise WriteAssetError("WebP-animated assets must provide a fake PNG URL")
+		url = asset.fakePng
+
 	try:
-		data = requests.get(asset.url).content
+		data = requests.get(url).content
 	except (requests.exceptions.RequestException, IOError) as e:
 		raise WriteAssetError(f"failed to fetch asset data: {e}") from e
 	

@@ -187,6 +187,7 @@ class Asset(NamedTuple):
 	showBoop: bool
 	author: AssetAuthor
 	game: GameInfo
+	fakePng: str | None
 	isUpvoted: bool | None
 	isDownvoted: bool | None
 	isHearted: bool | None
@@ -197,8 +198,8 @@ class Asset(NamedTuple):
 	def fromJSON(raw: object) -> Asset:
 		if not isinstance(raw, dict):
 			raise TypeError("non-object given as an asset")
-		if len(raw) != 31 and len(raw) != 26:
-			raise ValueError(f"incorrect number of properties in asset; expected: 26 or 31, got: {len(raw)}")
+		if len(raw) not in {26, 27, 31, 32}:
+			raise ValueError(f"incorrect number of properties in asset; expected: 26 or 27 or 31 or 322, got: {len(raw)}")
 		
 		if "id" not in raw:
 			raise ValueError("asset missing required property 'id'")
@@ -324,6 +325,12 @@ class Asset(NamedTuple):
 		if "author" not in raw:
 			raise ValueError("asset missing required property 'author'")
 
+		fakePng: None | str = None
+		if "fake_png" in raw:
+			if not isinstance(raw["fake_png"], str):
+				raise TypeError("invalid type for 'fake_png' property of asset")
+			fakePng = raw["fake_png"]
+
 		isUpvoted: None | bool = None
 		if "is_upvoted" in raw:
 			if not isinstance(raw["is_upvoted"], bool):
@@ -384,6 +391,7 @@ class Asset(NamedTuple):
 			raw["show_boop"],
 			AssetAuthor.fromJSON(raw["author"]),
 			GameInfo.fromJSON(raw["game"]),
+			fakePng,
 			isUpvoted,
 			isDownvoted,
 			isHearted,
