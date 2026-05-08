@@ -6,7 +6,7 @@ class AssetRequest(NamedTuple):
 	Specification for the request of an asset or list of assets.
 	"""
 	collection_id: str
-	asset_type: Literal["grid"]
+	asset_type: Literal["grid", "logo", "hero"]
 	page: int
 	limit: int
 	user_steam64: None
@@ -407,39 +407,6 @@ class FilterStyleMeta(NamedTuple):
 		
 		return FilterStyleMeta(raw["count"])
 
-class FilterStyle(NamedTuple):
-	alternate: FilterStyleMeta
-	blurred: FilterStyleMeta
-	noLogo: FilterStyleMeta
-	material: FilterStyleMeta
-	whiteLogo: FilterStyleMeta
-
-	@staticmethod
-	def fromJSON(raw: object) -> FilterStyle:
-		if not isinstance(raw, dict):
-			raise TypeError("non-object given as response data filters style filter")
-		if len(raw) != 5:
-			raise ValueError(f"incorrect number of properties in response data filters; expected: 5, got: {len(raw)}")
-		
-		if "alternate" not in raw:
-			raise ValueError("response data filters style filter missing required property 'alternate'")
-		if "blurred" not in raw:
-			raise ValueError("response data filters style filter missing required property 'blurred'")
-		if "no_logo" not in raw:
-			raise ValueError("response data filters style filter missing required property 'no_logo'")
-		if "material" not in raw:
-			raise ValueError("response data filters style filter missing required property 'material'")
-		if "white_logo" not in raw:
-			raise ValueError("response data filters style filter missing required property 'white_logo'")
-
-		return FilterStyle(
-			FilterStyleMeta.fromJSON(raw["alternate"]),
-			FilterStyleMeta.fromJSON(raw["blurred"]),
-			FilterStyleMeta.fromJSON(raw["no_logo"]),
-			FilterStyleMeta.fromJSON(raw["material"]),
-			FilterStyleMeta.fromJSON(raw["white_logo"]),
-		)
-
 class FilterDimensionsMeta(NamedTuple):
 	ratio: tuple[int, int]
 	count: int
@@ -469,8 +436,8 @@ class FilterDimensionsMeta(NamedTuple):
 		return FilterDimensionsMeta((raw["ratio"][0], raw["ratio"][1]), raw["count"])
 
 class Filter(NamedTuple):
-	style: FilterStyle
-	dimensions: dict[str, FilterDimensionsMeta]
+	style: dict[str, FilterStyleMeta]
+	dimensions: dict[str, FilterDimensionsMeta] | None
 	language: dict[str, FilterStyleMeta]
 	mime: dict[str, FilterStyleMeta]
 
@@ -483,19 +450,36 @@ class Filter(NamedTuple):
 		
 		if "style" not in raw:
 			raise ValueError("response data filters missing required property 'style'")
+		if not isinstance(raw["style"], dict):
+			raise TypeError("invalid type for 'style' property of response data filters")
+		style = dict[str, FilterStyleMeta]()
+		for s, meta in raw["style"].items():
+			if not isinstance(s, str):
+				raise TypeError(f"found non-string property key in response data filters style: {s}")
+			try:
+				style[s] = FilterStyleMeta.fromJSON(meta)
+			except (TypeError, ValueError) as e:
+				raise TypeError(f"found invalid metadata for style filter '{s}': {meta}")
 
 		if "dimensions" not in raw:
 			raise ValueError("response data filters missing required property 'dimensions'")
-		if not isinstance(raw["dimensions"], dict):
+
+		dimensions: None | dict[str, FilterDimensionsMeta] = None
+		# for logos, 'dimensions' will be an empty list (instead of an empty object?)
+		if isinstance(raw["dimensions"], list):
+			if len(raw["dimensions"]) != 0:
+				raise ValueError(f"found non-empty list dimensions filter: {raw['dimensions']}")
+		elif not isinstance(raw["dimensions"], dict):
 			raise TypeError("invalid type for 'dimensions' property of response data filters")
-		dimensions = dict[str, FilterDimensionsMeta]()
-		for dim, meta in raw["dimensions"].items():
-			if not isinstance(dim, str):
-				raise TypeError(f"found non-string property key in response data filters dimensions: {dim}")
-			try:
-				dimensions[dim] = FilterDimensionsMeta.fromJSON(meta)
-			except (TypeError, ValueError) as e:
-				raise TypeError(f"found invalid metadata for dimension filter '{dim}': {e}") from e
+		else:
+			dimensions = dict[str, FilterDimensionsMeta]()
+			for dim, meta in raw["dimensions"].items():
+				if not isinstance(dim, str):
+					raise TypeError(f"found non-string property key in response data filters dimensions: {dim}")
+				try:
+					dimensions[dim] = FilterDimensionsMeta.fromJSON(meta)
+				except (TypeError, ValueError) as e:
+					raise TypeError(f"found invalid metadata for dimension filter '{dim}': {e}") from e
 
 		if "language" not in raw:
 			raise ValueError("response data filters missing required property 'language'")
@@ -523,7 +507,7 @@ class Filter(NamedTuple):
 			except (TypeError, ValueError) as e:
 				raise TypeError(f"found invalid metadata for mime filter '{m}': {e}") from e
 
-		return Filter(FilterStyle.fromJSON(raw["style"]), dimensions, languages, mime)
+		return Filter(style, dimensions, languages, mime)
 
 class AssetResponseData(NamedTuple):
 	hasHiddenAssets: bool
