@@ -1,5 +1,6 @@
 from typing import NamedTuple, Literal
 from datetime import datetime
+import json
 
 class AssetRequest(NamedTuple):
 	"""
@@ -656,18 +657,19 @@ class SteamItem(NamedTuple):
 	type: str
 	name: str
 	id: int
-	price: SteamPrice
+	price: SteamPrice | None
 	tinyImage: str
 	metascore: str
 	platforms: SteamPlatforms
 	streamingVideo: bool
+	controllerSupport: str | None
 
 	@staticmethod
 	def fromJSON(raw: object) -> SteamItem:
 		if not isinstance(raw, dict):
 			raise TypeError("non-object given as steam item")
-		if len(raw) != 8:
-			raise ValueError(f"invalid number of properties in steam item; expected: 8, got: {len(raw)}")
+		if len(raw) not in {7, 8, 9}:
+			raise ValueError(f"invalid number of properties in steam item; expected: 7 or 8 or 9, got: {len(raw)}")
 
 		if "type" not in raw:
 			raise ValueError("steam item missing required property 'type'")
@@ -684,8 +686,12 @@ class SteamItem(NamedTuple):
 		if not isinstance(raw["id"], int):
 			raise TypeError("invalid type for 'id' property of steam item")
 
-		if "price" not in raw:
-			raise ValueError("steam item missing required property 'price'")
+		price: SteamPrice | None = None
+		if "price" in raw:
+			try:
+				price = SteamPrice.fromJSON(raw["price"])
+			except (ValueError, TypeError) as e:
+				raise TypeError(f"invalid 'price' property on Steam Item: {e}") from e
 
 		if "tiny_image" not in raw:
 			raise ValueError("steam item missing required property 'tiny_image'")
@@ -705,15 +711,22 @@ class SteamItem(NamedTuple):
 		if not isinstance(raw["streamingvideo"], bool):
 			raise TypeError("invalid type for 'streamingvideo' property of steam item")
 
+		controllerSupport: str | None = None
+		if "controller_support" in raw:
+			if not isinstance(raw["controller_support"], str):
+				raise TypeError("invalid type for 'controller_support' property of steam item")
+			controllerSupport = raw["controller_support"]
+
 		return SteamItem(
 			raw["type"],
 			raw["name"],
 			raw["id"],
-			SteamPrice.fromJSON(raw["price"]),
+			price,
 			raw["tiny_image"],
 			raw["metascore"],
 			SteamPlatforms.fromJSON(raw["platforms"]),
 			raw["streamingvideo"],
+			controllerSupport
 		)
 
 class SteamItemsResponse(NamedTuple):
