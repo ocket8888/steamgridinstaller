@@ -1,7 +1,10 @@
-from .model import Asset, AssetRequest, AssetResponse, SteamItem, SteamItemsResponse
-import requests
 import json
 import sys
+from typing import Final
+
+import requests
+
+from .model import Asset, AssetRequest, AssetResponse, SteamItem, SteamItemsResponse
 
 class RequestError(Exception):
 	"""
@@ -13,10 +16,15 @@ class ParseError(ValueError):
 	Represents an error that occurred parsing a response from the API.
 	"""
 
+_STEAM_CACHE: Final[dict[str, SteamItem]] = {}
+
 def getSteamGameInfo(name: str) -> SteamItem:
 	"""
 	gets the steam info for a game given its name
 	"""
+	if name in _STEAM_CACHE:
+		return _STEAM_CACHE[name]
+
 	try:
 		response = requests.get(f"https://store.steampowered.com/api/storesearch/?term={name.replace(" ", "+")}&l=english&cc=US")
 		parsed = SteamItemsResponse.fromJSON(response.json())
@@ -34,10 +42,12 @@ def getSteamGameInfo(name: str) -> SteamItem:
 
 	if item is None:
 		if len(parsed.items) > 0:
-			print("selecting an arbitrary entry for game '", name, "' with no exact match found", sep="", file=sys.stderr)
+			print("Warning: selecting an arbitrary entry for game '", name, "' with no exact match found", sep="", file=sys.stderr)
 			item = parsed.items[0]
 		else:
 			raise ValueError(f"no steam game found by name '{name}'")
+
+	_STEAM_CACHE[name] = item
 
 	return item
 
