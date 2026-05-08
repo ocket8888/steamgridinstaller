@@ -181,7 +181,7 @@ class Asset(NamedTuple):
 	mime: str
 	isAnimated: bool
 	isDeleted: bool
-	animationType: None
+	animationType: None | str
 	processing: bool
 	showBoop: bool
 	author: AssetAuthor
@@ -307,7 +307,7 @@ class Asset(NamedTuple):
 
 		if "animation_type" not in raw:
 			raise ValueError("asset missing required property 'animation_type'")
-		if raw["animation_type"] is not None:
+		if raw["animation_type"] is not None and not isinstance(raw["animation_type"], str):
 			raise ValueError(f"got a value for 'animation_type': {raw['animation_type']}")
 
 		if "processing" not in raw:
