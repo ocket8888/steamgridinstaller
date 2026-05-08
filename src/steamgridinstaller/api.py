@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Final
+from typing import Final, Literal
 
 import requests
 
@@ -51,8 +51,8 @@ def getSteamGameInfo(name: str) -> SteamItem:
 
 	return item
 
-def getAssets(collectionID: str) -> list[tuple[Asset, SteamItem | None]]:
-	data = AssetRequest(collectionID, "grid", 0, 0, None, None)
+def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"]) -> list[tuple[Asset, SteamItem | None]]:
+	data = AssetRequest(collectionID, typ, 0, 0, None, None)
 	try:
 		response = requests.post("https://www.steamgriddb.com/api/public/search/assets", json=data._asdict())
 		raw = response.json()
