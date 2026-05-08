@@ -66,7 +66,7 @@ def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
 		raise WriteAssetError(f"unsupported dimensions for game asset: {asset.height}x{asset.width}")
 	
 	try:
-		fname = f"{fname}.{getExtFromMime(asset.mime)}"
+		fname = f"{fname}{getExtFromMime(asset.mime)}"
 	except TypeError as e:
 		raise WriteAssetError(f"failed to get extension from mime type '{asset.mime}': {e}") from e
 	
