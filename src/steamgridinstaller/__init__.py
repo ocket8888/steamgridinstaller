@@ -11,12 +11,18 @@ from .fs import locateOrCreateGridFolder, writeAsset, WriteAssetError
 
 def main() -> int:
 	parser = ArgumentParser(description="a downloader/installer for SteamGrid collections")
-	parser.add_argument("collectionID", metavar="collection ID")
-	parser.add_argument("-o", "--output-directory", default=os.path.join(os.environ["HOME"], ".local", "share", "Steam", "userdata"), dest="outputDirectory")
+	parser.add_argument("collectionID", metavar="collection ID", help="The ID of the SteamgridDB collection you want to install. You can find this at the end of the URL when viewing a collection in a browser.")
+	parser.add_argument(
+		"-o",
+		"--output-directory",
+		default=os.path.join(os.environ["HOME"], ".local", "share", "Steam", "userdata"),
+		dest="outputDirectory",
+		help="Sets the output directory. The default location is to look for a Steam user under ~/.local/share/Steam/userdata and place it there. This must be the path to the directory containing Steam users - NOT the folder where you want the grids to go!"
+	)
 	parser.add_argument(
 		"-O",
 		"--override",
-		help="Format: 'name=ID'. Overrides an association between a (Steamgriddb) game name and a numeric (Steam) game ID. This is useful when the closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we wont be able to find it through the Steam API, or for non-steam games",
+		help="Format: 'name=ID'. Overrides an association between a (SteamgridDB) game name and a numeric (Steam) game ID. This is useful when the closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we won't be able to find it through the Steam API, or for non-Steam games.",
 		action="append",
 	)
 	args = parser.parse_args()
