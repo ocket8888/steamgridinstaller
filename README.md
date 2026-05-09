@@ -36,3 +36,6 @@ must use the `-O`/`--override` option to manually specify the ID. Although I've 
 > Overrides an association between a (SteamgridDB) game name and a numeric (Steam) game ID. This is useful when the
 > closest match is incorrect or when a game is unlisted (e.g. *The 7th Guest*) and we won't be able to find it through
 > the Steam API, or for non-Steam games.
+
+`-v, --version`
+> Print version information and exit.

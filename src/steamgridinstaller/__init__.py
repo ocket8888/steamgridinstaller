@@ -8,13 +8,16 @@
 
 import sys
 from argparse import ArgumentParser
+import os
+from importlib import metadata
 
 import requests
-import os
 
 from .api import getAssets, ParseError, RequestError
 from .fs import locateOrCreateGridFolder, writeAsset, WriteAssetError
 from .progress import printProgressBar
+
+__version__ = metadata.version(__package__)
 
 def main() -> int:
 	parser = ArgumentParser(
@@ -37,6 +40,7 @@ def main() -> int:
 		help="Format: 'name=ID'. Overrides an association between a (SteamgridDB) game name and a numeric (Steam) game ID. This is useful when the closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we won't be able to find it through the Steam API, or for non-Steam games.",
 		action="append",
 	)
+	parser.add_argument("-v", "--version", action="version", version=__version__, help="Print version information and exit.")
 	args = parser.parse_args()
 
 	try:
