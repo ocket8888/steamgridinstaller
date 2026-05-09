@@ -99,6 +99,8 @@ def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"], overrides
 	except (ValueError, TypeError) as e:
 		raise ParseError(f"failed to parse asset response: {e}") from e
 
+	print("found", len(parsed.data.assets), f"{typ}{'es' if typ == 'hero' else 's'}")
+
 	assets = list[tuple[Asset, SteamItem | None]]()
 	for asset in parsed.data.assets:
 		item: SteamItem | None = None

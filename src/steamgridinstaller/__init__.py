@@ -70,7 +70,10 @@ def main() -> int:
 		print("getting collection logos:", e, file=sys.stderr)
 		return 2
 
+	itemNo = 0
 	for asset, item in assets:
+		itemNo += 1
+		print("collecting asset", ++itemNo, "of", len(assets) + len(logos))
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
 		else:
@@ -80,6 +83,8 @@ def main() -> int:
 				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
 
 	for asset, item in logos:
+		itemNo += 1
+		print("collecting asset", itemNo, "of", len(assets) + len(logos))
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
 		else:
