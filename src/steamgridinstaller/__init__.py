@@ -14,6 +14,7 @@ import os
 
 from .api import getAssets, ParseError, RequestError
 from .fs import locateOrCreateGridFolder, writeAsset, WriteAssetError
+from .progress import printProgressBar
 
 def main() -> int:
 	parser = ArgumentParser(description="a downloader/installer for SteamGrid collections")
@@ -83,9 +84,10 @@ def main() -> int:
 		return 2
 
 	itemNo = 0
+	total = len(assets) + len(logos)
 	for asset, item in assets:
 		itemNo += 1
-		print("collecting asset", ++itemNo, "of", len(assets) + len(logos))
+		printProgressBar(itemNo, total)
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
 		else:
@@ -96,7 +98,7 @@ def main() -> int:
 
 	for asset, item in logos:
 		itemNo += 1
-		print("collecting asset", itemNo, "of", len(assets) + len(logos))
+		printProgressBar(itemNo, total)
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
 		else:
