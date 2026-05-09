@@ -17,7 +17,12 @@ from .fs import locateOrCreateGridFolder, writeAsset, WriteAssetError
 from .progress import printProgressBar
 
 def main() -> int:
-	parser = ArgumentParser(description="a downloader/installer for SteamGrid collections")
+	parser = ArgumentParser(
+		description="A downloader/installer for SteamGrid collections",
+		epilog="%(prog)s will attempt to find games that closely resemble the names on SteamGridDB. For example, the game listed on SteamGridDB as 'Ace Combat 7: Skies Unknown' is known to Steam as 'ACE COMBAT™ 7: SKIES UNKNOWN'. " +
+			"%(prog)s will resolve this, but it will issue a warning letting you know it has done so. It may get things wrong and may fail to find some unlisted games. "+
+			"To fix this, you must use the -O/--override option to manually specify the ID. Although I've gone to great pains to ensure that this doesn't happen (except for unlisted games nothing I can do about that) so hopefully you won't need to."
+	)
 	parser.add_argument("collectionID", metavar="collection ID", help="The ID of the SteamgridDB collection you want to install. You can find this at the end of the URL when viewing a collection in a browser.")
 	parser.add_argument(
 		"-o",

@@ -16,6 +16,12 @@ When installed, a runnable command `steamgrid` is provided.
 **collection ID**
 > The ID of the SteamgridDB collection you want to install. You can find this at the end of the URL when viewing a collection in a browser.
 
+`steamgrid` will attempt to find games that closely resemble the names on SteamGridDB. For example, the game listed on SteamGridDB as
+"*Ace Combat 7: Skies Unknown*" is known to Steam as "*ACE COMBAT™ 7: SKIES UNKNOWN*". `steamgrid` will resolve this, but it will
+issue a warning letting you know it has done so. It may get things wrong and may fail to find some unlisted games. To fix this, you
+must use the `-O`/`--override` option to manually specify the ID. Although I've gone to great pains to ensure that this doesn't happen
+(except for unlisted games nothing I can do about that) so hopefully you won't need to.
+
 ### Options
 `-h, --help`
 > Show a help message and exit.
