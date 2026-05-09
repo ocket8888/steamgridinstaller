@@ -83,6 +83,7 @@ def main() -> int:
 		print("getting collection logos:", e, file=sys.stderr)
 		return 2
 
+	print()
 	itemNo = 0
 	total = len(assets) + len(logos)
 	for asset, item in assets:

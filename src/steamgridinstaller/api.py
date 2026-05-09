@@ -8,6 +8,7 @@ import json
 import sys
 from typing import Final, Literal
 from difflib import SequenceMatcher
+from re import Match, compile as compileRegExp
 
 import requests
 
@@ -23,6 +24,48 @@ class ParseError(ValueError):
 	Represents an error that occurred parsing a response from the API.
 	"""
 
+_ARABIC_TO_ROMAN: Final[dict[str, str]] = {
+	 "1": "I",
+	 "2": "II",
+	 "3": "III",
+	 "4": "IV",
+	 "5": "V",
+	 "6": "VI",
+	 "7": "VII",
+	 "8": "VIII",
+	 "9": "IX",
+	"10": "X",
+	"11": "XI",
+	"12": "XII",
+	"13": "XIII",
+	"14": "XIV",
+	"15": "XV",
+	"16": "XVI",
+	"17": "XVII",
+	"18": "XVIII",
+	"19": "XIX",
+	"20": "XX",
+	# if i truly need more than this i should just write a parser
+}
+
+_NUMERAL_PATTERN = compileRegExp(r"\b\d+\b")
+def _replacer(match: Match) -> str:
+	span = match.span()
+	arabic = match.string[span[0]:span[1]]
+	if arabic in _ARABIC_TO_ROMAN:
+		return _ARABIC_TO_ROMAN[arabic]
+	return arabic
+
+def _replaceNumerals(title: str) -> tuple[str, bool]:
+	"""
+	Replaces all numerals found in the title with their Roman equivalent.
+	Reports the string after replacement along with whether any replacement was actually done.
+	Only considers numerals which are their own word - e.g. 'Arma 2' will become 'Arma II',
+	but 'Se7en' will be given back as `('Se7en', False)`.
+	"""
+	out, count = _NUMERAL_PATTERN.subn(_replacer, title)
+	return out, count > 0
+
 def _editDistance(a: str, b: str) -> int:
 	"""
 	Calculates the edit distance between a and b.
@@ -36,7 +79,7 @@ def _editDistance(a: str, b: str) -> int:
 
 _STEAM_CACHE: Final[dict[str, SteamItem]] = {}
 
-def getSteamGameInfo(name: str, overrides: dict[str, int]) -> SteamItem:
+def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool = False) -> SteamItem:
 	"""
 	gets the steam info for a game given its name
 	"""
@@ -83,6 +126,11 @@ def getSteamGameInfo(name: str, overrides: dict[str, int]) -> SteamItem:
 				item = itm
 
 	if item is None:
+		if not alreadyReplaced:
+			replaced, didReplace = _replaceNumerals(name)
+			if didReplace:
+				print(f"Warning: no matches found for steam game by name '{name}' - trying '{replaced}' instead", file=sys.stderr)
+				return getSteamGameInfo(replaced, overrides, True)
 		raise ValueError(f"no steam game found by name '{name}'")
 	
 	if item.name.casefold() != nm:
