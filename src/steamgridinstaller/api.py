@@ -134,7 +134,7 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool
 		raise ValueError(f"no steam game found by name '{name}'")
 	
 	if item.name.casefold() != nm:
-		print("Warning: selecting best match for", f"'{name}':", item.name)
+		print("Warning: selecting best match for", f"'{name}':", item.name, file=sys.stderr)
 
 	_STEAM_CACHE[name] = item
 
