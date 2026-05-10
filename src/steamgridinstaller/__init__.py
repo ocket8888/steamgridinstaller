@@ -100,22 +100,26 @@ def main() -> int:
 		printProgressBar(itemNo, total)
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
+			print()
 		else:
 			try:
 				writeAsset(asset, item.id, outDir)
 			except WriteAssetError as e:
 				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
+				print()
 
 	for asset, item in logos:
 		itemNo += 1
 		printProgressBar(itemNo, total)
 		if item is None:
 			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
+			print()
 		else:
 			try:
 				writeAsset(asset, item.id, outDir, isLogo=True)
 			except WriteAssetError as e:
 				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
+				print()
 
 	return 0
 
