@@ -32,7 +32,7 @@ def getExtFromMime(mime: str) -> str:
 	except KeyError as e:
 		raise TypeError(f"unsupported image MIME type: {mime}")
 
-def locateOrCreateGridFolder(start: str) -> str:
+def locateOrCreateGridFolder(start: str, debug: bool) -> str:
 	"""
 	given a starting location, finds the grids folder. If it does not exist, it
 	will be created.
@@ -40,6 +40,8 @@ def locateOrCreateGridFolder(start: str) -> str:
 	found: str | None = None
 	for entry in os.scandir(start):
 		if entry.is_dir():
+			if debug:
+				print("found steam user folder:", entry.path)
 			found = entry.path
 	
 	if found is None:
@@ -58,16 +60,22 @@ def locateOrCreateGridFolder(start: str) -> str:
 
 	return found
 
-def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
+def writeAsset(asset: Asset, id: int, dir: str, debug: bool, isLogo: bool = False):
 	"""
 	Writes the given asset to a steam grid file.
 	"""
 	fname = os.path.join(dir, f"{id}")
 	if isLogo:
+		if debug:
+			print("game", id, f"({asset.game.name}) is logo")
 		fname = f"{fname}_logo"
 	elif asset.width == 600 and asset.height == 900:
+		if debug:
+			print("game", id, f"({asset.game.name}) is cover")
 		fname = f"{fname}p"
 	elif (asset.width == 3840 and asset.height == 1240) or (asset.width == 1920 and asset.height == 620):
+		if debug:
+			print("game", id, f"({asset.game.name}) is wide cover")
 		fname = f"{fname}_hero"
 	elif (asset.width != 920 or asset.height != 430) and (asset.width != 460 or asset.height != 215):
 		raise WriteAssetError(f"unsupported dimensions for game asset: {asset.height}x{asset.width}")
@@ -81,7 +89,12 @@ def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
 	if asset.animationType == "WebP":
 		if asset.fakePng is None:
 			raise WriteAssetError("WebP-animated assets must provide a fake PNG URL")
+		if debug:
+			print("asset is a webp - using fakePng URL")
 		url = asset.fakePng
+
+	if debug:
+		print("fetching resource from:", url)
 
 	try:
 		data = requests.get(url).content
@@ -89,7 +102,12 @@ def writeAsset(asset: Asset, id: int, dir: str, isLogo: bool = False):
 		raise WriteAssetError(f"failed to fetch asset data: {e}") from e
 	
 	try:
+		if debug:
+			print("writing asset to file:", fname)
 		with open(fname, 'wb') as fd:
 			fd.write(data)
 	except OSError as e:
 		raise WriteAssetError(f"failed to write game asset data to disk: {e}") from e
+	finally:
+		if debug:
+			print()

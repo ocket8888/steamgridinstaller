@@ -39,3 +39,6 @@ must use the `-O`/`--override` option to manually specify the ID. Although I've 
 
 `-v, --version`
 > Print version information and exit.
+
+`--debug`
+> Logs a lot of debugging information to the console.

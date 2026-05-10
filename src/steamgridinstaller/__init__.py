@@ -41,10 +41,11 @@ def main() -> int:
 		action="append",
 	)
 	parser.add_argument("-v", "--version", action="version", version=__version__, help="Print version information and exit.")
+	parser.add_argument("--debug", help="Logs a lot of debugging information to the console", action="store_true", default=False)
 	args = parser.parse_args()
 
 	try:
-		outDir = locateOrCreateGridFolder(args.outputDirectory)
+		outDir = locateOrCreateGridFolder(args.outputDirectory, args.debug)
 	except (FileExistsError, FileNotFoundError) as e:
 		print(e, file=sys.stderr)
 		return 3
@@ -103,7 +104,7 @@ def main() -> int:
 			print()
 		else:
 			try:
-				writeAsset(asset, item.id, outDir)
+				writeAsset(asset, item.id, outDir, args.debug)
 			except WriteAssetError as e:
 				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
 				print()
@@ -116,7 +117,7 @@ def main() -> int:
 			print()
 		else:
 			try:
-				writeAsset(asset, item.id, outDir, isLogo=True)
+				writeAsset(asset, item.id, outDir, args.debug, isLogo=True)
 			except WriteAssetError as e:
 				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
 				print()
