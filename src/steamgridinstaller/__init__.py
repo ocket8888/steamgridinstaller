@@ -41,7 +41,7 @@ def main() -> int:
 		action="append",
 	)
 	parser.add_argument("-v", "--version", action="version", version=__version__, help="Print version information and exit.")
-	parser.add_argument("--debug", help="Logs a lot of debugging information to the console", action="store_true", default=False)
+	parser.add_argument("--debug", help="Logs a lot of debugging information to the console.", action="store_true", default=False)
 	args = parser.parse_args()
 
 	try:
