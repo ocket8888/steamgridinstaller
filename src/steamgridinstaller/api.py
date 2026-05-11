@@ -73,7 +73,7 @@ def _editDistance(a: str, b: str) -> int:
 	dist = 0
 	for code in SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
 		if code[0] != "equal":
-			++dist
+			dist += abs(code[2] - code[1]) + abs(code[4] - code[3])
 	
 	return dist
 
