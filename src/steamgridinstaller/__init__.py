@@ -6,21 +6,19 @@
 # steamgridinstaller is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>. 
 
-import sys
-from argparse import ArgumentParser
-import os
-from importlib import metadata
+import sys as _sys
+from argparse import ArgumentParser as _ArgumentParser
+import os as _os
+from importlib import metadata as _metadata
 
-import requests
+from .api import getAssets as _getAssets, ParseError as _ParseError, RequestError as _RequestError
+from .fs import locateOrCreateGridFolder as _locateOrCreateGridFolder, writeAsset as _writeAsset, WriteAssetError as _WriteAssetError
+from .progress import printProgressBar as _printProgressBar
 
-from .api import getAssets, ParseError, RequestError
-from .fs import locateOrCreateGridFolder, writeAsset, WriteAssetError
-from .progress import printProgressBar
-
-__version__ = metadata.version(__package__)
+__version__ = _metadata.version(__package__)
 
 def main() -> int:
-	parser = ArgumentParser(
+	parser = _ArgumentParser(
 		description="A downloader/installer for SteamGrid collections",
 		epilog="%(prog)s will attempt to find games that closely resemble the names on SteamGridDB. For example, the game listed on SteamGridDB as 'Ace Combat 7: Skies Unknown' is known to Steam as 'ACE COMBAT™ 7: SKIES UNKNOWN'. " +
 			"%(prog)s will resolve this, but it will issue a warning letting you know it has done so. It may get things wrong and may fail to find some unlisted games. "+
@@ -30,7 +28,7 @@ def main() -> int:
 	parser.add_argument(
 		"-o",
 		"--output-directory",
-		default=os.path.join(os.environ["HOME"], ".local", "share", "Steam", "userdata"),
+		default=_os.path.join(_os.environ["HOME"], ".local", "share", "Steam", "userdata"),
 		dest="outputDirectory",
 		help="Sets the output directory. The default location is to look for a Steam user under ~/.local/share/Steam/userdata and place it there. This must be the path to the directory containing Steam users - NOT the folder where you want the grids to go!"
 	)
@@ -45,52 +43,52 @@ def main() -> int:
 	args = parser.parse_args()
 
 	try:
-		outDir = locateOrCreateGridFolder(args.outputDirectory, args.debug)
+		outDir = _locateOrCreateGridFolder(args.outputDirectory, args.debug)
 	except (FileExistsError, FileNotFoundError) as e:
-		print(e, file=sys.stderr)
+		print(e, file=_sys.stderr)
 		return 3
 
 	overrides = dict[str, int]()
 	for override in args.override if args.override else []:
 		kv = override.split("=")
 		if len(kv) != 2:
-			print("invalid override:", override, file=sys.stderr)
-			print("format is 'name=ID'", file=sys.stderr)
+			print("invalid override:", override, file=_sys.stderr)
+			print("format is 'name=ID'", file=_sys.stderr)
 			return 4
 		try:
 			value = int(kv[1].strip(), 10)
 		except ValueError as e:
-			print("invalid override '", override, "': ", e, sep="", file=sys.stderr)
-			print("game ID must be numeric", file=sys.stderr)
+			print("invalid override '", override, "': ", e, sep="", file=_sys.stderr)
+			print("game ID must be numeric", file=_sys.stderr)
 			return 4
 		
 		overrides[kv[0]] = value
 
 	try:
-		assets = getAssets(args.collectionID, "grid", overrides)
-	except ParseError as e:
-		print("getting collection grids:", e, file=sys.stderr)
+		assets = _getAssets(args.collectionID, "grid", overrides)
+	except _ParseError as e:
+		print("getting collection grids:", e, file=_sys.stderr)
 		return 1
-	except RequestError as e:
-		print("getting collection grids:", e, file=sys.stderr)
+	except _RequestError as e:
+		print("getting collection grids:", e, file=_sys.stderr)
 		return 2
 
 	try:
-		assets.extend(getAssets(args.collectionID, "hero", overrides))
-	except ParseError as e:
-		print("getting collection heroes:", e, file=sys.stderr)
+		assets.extend(_getAssets(args.collectionID, "hero", overrides))
+	except _ParseError as e:
+		print("getting collection heroes:", e, file=_sys.stderr)
 		return 1
-	except RequestError as e:
-		print("getting collection heroes:", e, file=sys.stderr)
+	except _RequestError as e:
+		print("getting collection heroes:", e, file=_sys.stderr)
 		return 2
 	
 	try:
-		logos = getAssets(args.collectionID, "logo", overrides)
-	except ParseError as e:
-		print("getting collection logos", e, file=sys.stderr)
+		logos = _getAssets(args.collectionID, "logo", overrides)
+	except _ParseError as e:
+		print("getting collection logos", e, file=_sys.stderr)
 		return 1
-	except RequestError as e:
-		print("getting collection logos:", e, file=sys.stderr)
+	except _RequestError as e:
+		print("getting collection logos:", e, file=_sys.stderr)
 		return 2
 
 	print()
@@ -98,31 +96,31 @@ def main() -> int:
 	total = len(assets) + len(logos)
 	for asset, item in assets:
 		itemNo += 1
-		printProgressBar(itemNo, total)
+		_printProgressBar(itemNo, total, args.debug)
 		if item is None:
-			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
+			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=_sys.stderr)
 			print()
 		else:
 			try:
-				writeAsset(asset, item.id, outDir, args.debug)
-			except WriteAssetError as e:
-				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
+				_writeAsset(asset, item.id, outDir, args.debug)
+			except _WriteAssetError as e:
+				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=_sys.stderr)
 				print()
 
 	for asset, item in logos:
 		itemNo += 1
-		printProgressBar(itemNo, total)
+		_printProgressBar(itemNo, total, args.debug)
 		if item is None:
-			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=sys.stderr)
+			print("Warning: skipping apparent non-Steam game:", asset.game.name, file=_sys.stderr)
 			print()
 		else:
 			try:
-				writeAsset(asset, item.id, outDir, args.debug, isLogo=True)
-			except WriteAssetError as e:
-				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=sys.stderr)
+				_writeAsset(asset, item.id, outDir, args.debug, isLogo=True)
+			except _WriteAssetError as e:
+				print(f"Error: skipping asset #", asset.id, " for game '", asset.game.name, "' due to error: ", e, file=_sys.stderr)
 				print()
 
 	return 0
 
 if __name__ == "__main__":
-	sys.exit(main())
+	_sys.exit(main())

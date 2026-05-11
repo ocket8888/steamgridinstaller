@@ -4,14 +4,14 @@
 # steamgridinstaller is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>. 
 
-import os
-from typing import AnyStr, Final
+import os as _os
+from typing import AnyStr as _AnyStr, Final as _Final
 
-import requests
+import requests as _requests
 
-from .model import Asset
+from .model import Asset as _Asset
 
-_MIME_EXT_MAP: Final[dict[str, str]] = {
+_MIME_EXT_MAP: _Final[dict[str, str]] = {
 	"image/png": ".png",
 	"image/webp": ".png",
 	"image/jpg": ".jpg",
@@ -38,7 +38,7 @@ def locateOrCreateGridFolder(start: str, debug: bool) -> str:
 	will be created.
 	"""
 	found: str | None = None
-	for entry in os.scandir(start):
+	for entry in _os.scandir(start):
 		if entry.is_dir():
 			if debug:
 				print("found steam user folder:", entry.path)
@@ -47,24 +47,24 @@ def locateOrCreateGridFolder(start: str, debug: bool) -> str:
 	if found is None:
 		raise FileNotFoundError("no steam user folders exist in the given directory")
 	
-	found = os.path.join(found, "config")
-	if not os.path.isdir(found):
+	found = _os.path.join(found, "config")
+	if not _os.path.isdir(found):
 		raise FileNotFoundError("steam user directory does not contain 'config' dir")
 	
-	found = os.path.join(found, "grid")
+	found = _os.path.join(found, "grid")
 
-	if not os.path.exists(found):
-		os.mkdir(found)
-	elif not os.path.isdir(found):
+	if not _os.path.exists(found):
+		_os.mkdir(found)
+	elif not _os.path.isdir(found):
 		raise FileExistsError(f"'{found}' exists but is not a directory")
 
 	return found
 
-def writeAsset(asset: Asset, id: int, dir: str, debug: bool, isLogo: bool = False):
+def writeAsset(asset: _Asset, id: int, dir: str, debug: bool, isLogo: bool = False):
 	"""
 	Writes the given asset to a steam grid file.
 	"""
-	fname = os.path.join(dir, f"{id}")
+	fname = _os.path.join(dir, f"{id}")
 	if isLogo:
 		if debug:
 			print("game", id, f"({asset.game.name}) is logo")
@@ -97,8 +97,8 @@ def writeAsset(asset: Asset, id: int, dir: str, debug: bool, isLogo: bool = Fals
 		print("fetching resource from:", url)
 
 	try:
-		data = requests.get(url).content
-	except (requests.exceptions.RequestException, IOError) as e:
+		data = _requests.get(url).content
+	except (_requests.exceptions.RequestException, IOError) as e:
 		raise WriteAssetError(f"failed to fetch asset data: {e}") from e
 	
 	try:

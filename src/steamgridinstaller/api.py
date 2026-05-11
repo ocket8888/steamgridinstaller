@@ -4,15 +4,15 @@
 # steamgridinstaller is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>. 
 
-import json
-import sys
-from typing import Final, Literal
-from difflib import SequenceMatcher
-from re import Match, compile as compileRegExp
+import json as _json
+import sys as _sys
+from typing import Final as _Final, Literal as _Literal
+from difflib import SequenceMatcher as _SequenceMatcher
+from re import Match as _Match, compile as _compileRegExp
 
-import requests
+import requests as _requests
 
-from .model import Asset, AssetRequest, AssetResponse, SteamItem, SteamItemsResponse, SteamPlatforms
+from .model import Asset as _Asset, AssetRequest as _AssetRequest, AssetResponse as _AssetResponse, SteamItem as _SteamItem, SteamItemsResponse as _SteamItemsResponse, SteamPlatforms as _SteamPlatforms
 
 class RequestError(Exception):
 	"""
@@ -24,7 +24,7 @@ class ParseError(ValueError):
 	Represents an error that occurred parsing a response from the API.
 	"""
 
-_ARABIC_TO_ROMAN: Final[dict[str, str]] = {
+_ARABIC_TO_ROMAN: _Final[dict[str, str]] = {
 	 "1": "I",
 	 "2": "II",
 	 "3": "III",
@@ -48,8 +48,8 @@ _ARABIC_TO_ROMAN: Final[dict[str, str]] = {
 	# if i truly need more than this i should just write a parser
 }
 
-_NUMERAL_PATTERN = compileRegExp(r"\b\d+\b")
-def _replacer(match: Match) -> str:
+_NUMERAL_PATTERN = _compileRegExp(r"\b\d+\b")
+def _replacer(match: _Match) -> str:
 	span = match.span()
 	arabic = match.string[span[0]:span[1]]
 	if arabic in _ARABIC_TO_ROMAN:
@@ -71,13 +71,13 @@ def _editDistance(a: str, b: str) -> int:
 	Calculates the edit distance between a and b.
 	"""
 	dist = 0
-	for code in SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
+	for code in _SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
 		if code[0] != "equal":
 			dist += abs(code[2] - code[1]) + abs(code[4] - code[3])
 	
 	return dist
 
-_STEAM_CACHE: Final[dict[str, SteamItem]] = {}
+_STEAM_CACHE: _Final[dict[str, _SteamItem]] = {}
 
 def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool = False) -> SteamItem:
 	"""
@@ -87,14 +87,14 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool
 		return _STEAM_CACHE[name]
 
 	if name in overrides:
-		ret = SteamItem(
+		ret = _SteamItem(
 			"app",
 			name,
 			overrides[name],
 			None,
 			"OVERRIDDEN",
 			"",
-			SteamPlatforms(False, False, False),
+			_SteamPlatforms(False, False, False),
 			False,
 			None,
 		)
@@ -102,15 +102,15 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool
 		return ret
 
 	try:
-		response = requests.get(f"https://store.steampowered.com/api/storesearch/?term={name.replace(" ", "+")}&l=english&cc=US")
-		parsed = SteamItemsResponse.fromJSON(response.json())
-	except (requests.exceptions.RequestException, IOError) as e:
-		raise RequestError(f"failed to request steam game infor for '{name}': {e}") from e
+		response = _requests.get(f"https://store.steampowered.com/api/storesearch/?term={name.replace(" ", "+")}&l=english&cc=US").json()
+		parsed = _SteamItemsResponse.fromJSON(response)
+	except (_requests.exceptions.RequestException, IOError) as e:
+		raise RequestError(f"failed to request steam game info for '{name}': {e}") from e
 	except (ValueError, TypeError) as e:
 		raise ParseError(f"failed to parse response for steam game info request for '{name}': {e}") from e
 
 	nm = name.casefold()
-	item: SteamItem | None = None
+	item: _SteamItem | None = None
 	minDist = float("inf")
 	for itm in parsed.items:
 		iname = itm.name.casefold()
@@ -129,39 +129,39 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], alreadyReplaced: bool
 		if not alreadyReplaced:
 			replaced, didReplace = _replaceNumerals(name)
 			if didReplace:
-				print(f"Warning: no matches found for steam game by name '{name}' - trying '{replaced}' instead", file=sys.stderr)
+				print(f"Warning: no matches found for steam game by name '{name}' - trying '{replaced}' instead", file=_sys.stderr)
 				return getSteamGameInfo(replaced, overrides, True)
 		raise ValueError(f"no steam game found by name '{name}'")
 	
 	if item.name.casefold() != nm:
-		print("Warning: selecting best match for", f"'{name}':", item.name, file=sys.stderr)
+		print("Warning: selecting best match for", f"'{name}':", item.name, file=_sys.stderr)
 
 	_STEAM_CACHE[name] = item
 
 	return item
 
-def getAssets(collectionID: str, typ: Literal["grid", "logo", "hero"], overrides: dict[str, int]) -> list[tuple[Asset, SteamItem | None]]:
-	data = AssetRequest(collectionID, typ, 0, 0, None, None)
+def getAssets(collectionID: str, typ: _Literal["grid", "logo", "hero"], overrides: dict[str, int]) -> list[tuple[_Asset, _SteamItem | None]]:
+	data = _AssetRequest(collectionID, typ, 0, 0, None, None)
 	try:
-		response = requests.post("https://www.steamgriddb.com/api/public/search/assets", json=data._asdict())
+		response = _requests.post("https://www.steamgriddb.com/api/public/search/assets", json=data._asdict())
 		raw = response.json()
-	except (requests.exceptions.RequestException, IOError) as e:
+	except (_requests.exceptions.RequestException, IOError) as e:
 		raise RequestError(f"failed to request grids: {e}") from e
 		
 	try:
-		parsed = AssetResponse.fromJSON(raw)
+		parsed = _AssetResponse.fromJSON(raw)
 	except (ValueError, TypeError) as e:
 		raise ParseError(f"failed to parse asset response: {e}") from e
 
 	print("found", len(parsed.data.assets), f"{typ}{'es' if typ == 'hero' else 's'}")
 
-	assets = list[tuple[Asset, SteamItem | None]]()
+	assets = list[tuple[_Asset, _SteamItem | None]]()
 	for asset in parsed.data.assets:
-		item: SteamItem | None = None
+		item: _SteamItem | None = None
 		try:
 			item = getSteamGameInfo(asset.game.name, overrides)
 		except (ValueError) as e:
-			print("skipping apparent non-steam game '", asset.game.name, "': ", e, file=sys.stderr, sep="")
+			print("skipping apparent non-steam game '", asset.game.name, "': ", e, file=_sys.stderr, sep="")
 
 		assets.append((asset, item))
 
