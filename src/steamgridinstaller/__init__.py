@@ -4,7 +4,7 @@
 # This file is part of steamgridinstaller.
 # steamgridinstaller is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # steamgridinstaller is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>. 
+# You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>.
 
 import sys as _sys
 from argparse import ArgumentParser as _ArgumentParser
@@ -64,8 +64,12 @@ def main() -> int:
 		
 		overrides[kv[0]] = value
 
+	if args.debug:
+		print("Overrides:")
+		print(*(f"{key}: {value}" for key, value in overrides.items()), sep="\n")
+
 	try:
-		assets = _getAssets(args.collectionID, "grid", overrides)
+		assets = _getAssets(args.collectionID, "grid", overrides, args.debug)
 	except _ParseError as e:
 		print("getting collection grids:", e, file=_sys.stderr)
 		return 1
@@ -74,16 +78,16 @@ def main() -> int:
 		return 2
 
 	try:
-		assets.extend(_getAssets(args.collectionID, "hero", overrides))
+		assets.extend(_getAssets(args.collectionID, "hero", overrides, args.debug))
 	except _ParseError as e:
 		print("getting collection heroes:", e, file=_sys.stderr)
 		return 1
 	except _RequestError as e:
 		print("getting collection heroes:", e, file=_sys.stderr)
 		return 2
-	
+
 	try:
-		logos = _getAssets(args.collectionID, "logo", overrides)
+		logos = _getAssets(args.collectionID, "logo", overrides, args.debug)
 	except _ParseError as e:
 		print("getting collection logos", e, file=_sys.stderr)
 		return 1
