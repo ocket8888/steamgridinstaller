@@ -79,22 +79,38 @@ def _editDistance(a: str, b: str) -> int:
 
 _STEAM_CACHE: _Final[dict[str, _SteamItem]] = {}
 
-def getSteamGameInfo(name: str, overrides: dict[str, int], debug: bool, alreadyReplaced: bool = False) -> _SteamItem:
+def getSteamGameInfo(asset: _Asset, overrides: dict[str | int, int], debug: bool, alreadyReplaced: bool = False) -> _SteamItem:
 	"""
 	gets the steam info for a game given its name
 	"""
-	if name in _STEAM_CACHE:
+	if asset.id in overrides:
 		if debug:
-			print("game '", name, "' found in cache", sep="")
-		return _STEAM_CACHE[name]
-
-	if name in overrides:
-		if debug:
-			print("game '", name, "' found in overrides as ", overrides[name], sep="")
+			print("asset #", asset.id, " (for '", asset.game.name, "') found in overrides as ", overrides[asset.id], sep="")
 		ret = _SteamItem(
 			"app",
-			name,
-			overrides[name],
+			asset.game.name,
+			overrides[asset.id],
+			None,
+			"OVERRIDDEN",
+			"",
+			_SteamPlatforms(False, False, False),
+			False,
+			None
+		)
+		return ret
+
+	if asset.game.name in _STEAM_CACHE:
+		if debug:
+			print("game '", asset.game.name, "' found in cache", sep="")
+		return _STEAM_CACHE[asset.game.name]
+
+	if asset.game.name in overrides:
+		if debug:
+			print("game '", asset.game.name, "' found in overrides as ", overrides[asset.game.name], sep="")
+		ret = _SteamItem(
+			"app",
+			asset.game.name,
+			overrides[asset.game.name],
 			None,
 			"OVERRIDDEN",
 			"",
@@ -102,28 +118,28 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], debug: bool, alreadyR
 			False,
 			None,
 		)
-		_STEAM_CACHE[name] = ret
+		_STEAM_CACHE[asset.game.name] = ret
 		return ret
 
 	try:
-		response = _requests.get(f"https://store.steampowered.com/api/storesearch/?term={name.replace(" ", "+")}&l=english&cc=US").json()
+		response = _requests.get(f"https://store.steampowered.com/api/storesearch/?term={asset.game.name.replace(" ", "+")}&l=english&cc=US").json()
 		if debug:
 			print("steam store search response for", asset.game.name)
 			print(_json.dumps(response, indent="\t"))
 		parsed = _SteamItemsResponse.fromJSON(response)
 	except (_requests.exceptions.RequestException, IOError) as e:
-		raise RequestError(f"failed to request steam game info for '{name}': {e}") from e
+		raise RequestError(f"failed to request steam game info for '{asset.game.name}': {e}") from e
 	except (ValueError, TypeError) as e:
-		raise ParseError(f"failed to parse response for steam game info request for '{name}': {e}") from e
+		raise ParseError(f"failed to parse response for steam game info request for '{asset.game.name}': {e}") from e
 
-	nm = name.casefold()
+	nm = asset.game.name.casefold()
 	item: _SteamItem | None = None
 	minDist = float("inf")
 	for itm in parsed.items:
 		iname = itm.name.casefold()
 		if iname == nm:
 			if item is not None and item.name.casefold() == nm:
-				raise ValueError(f"duplicate items found with name '{name}'")
+				raise ValueError(f"duplicate items found with name '{asset.game.name}'")
 			item = itm
 			minDist = -1
 		else:
@@ -134,20 +150,21 @@ def getSteamGameInfo(name: str, overrides: dict[str, int], debug: bool, alreadyR
 
 	if item is None:
 		if not alreadyReplaced:
-			replaced, didReplace = _replaceNumerals(name)
+			replaced, didReplace = _replaceNumerals(asset.game.name)
 			if didReplace:
-				print(f"Warning: no matches found for steam game by name '{name}' - trying '{replaced}' instead", file=_sys.stderr)
-				return getSteamGameInfo(replaced, overrides, debug, True)
-		raise ValueError(f"no steam game found by name '{name}'")
+				print(f"Warning: no matches found for steam game by name '{asset.game.name}' - trying '{replaced}' instead", file=_sys.stderr)
+				return getSteamGameInfo(asset.withName(replaced), overrides, debug, True)
+		raise ValueError(f"no steam game found by name '{asset.game.name}'")
+
 
 	if item.name.casefold() != nm:
-		print("Warning: selecting best match for", f"'{name}':", item.name, file=_sys.stderr)
+		print("Warning: selecting best match for", f"'{asset.game.name}':", item.name, file=_sys.stderr)
 
-	_STEAM_CACHE[name] = item
+	_STEAM_CACHE[asset.game.name] = item
 
 	return item
 
-def getAssets(collectionID: str, typ: _Literal["grid", "logo", "hero"], overrides: dict[str, int], debug: bool) -> list[tuple[_Asset, _SteamItem | None]]:
+def getAssets(collectionID: str, typ: _Literal["grid", "logo", "hero"], overrides: dict[str | int, int], debug: bool) -> list[tuple[_Asset, _SteamItem | None]]:
 	data = _AssetRequest(collectionID, typ, 0, 0, None, None)
 	try:
 		response = _requests.post("https://www.steamgriddb.com/api/public/search/assets", json=data._asdict())
@@ -171,7 +188,7 @@ def getAssets(collectionID: str, typ: _Literal["grid", "logo", "hero"], override
 	for asset in parsed.data.assets:
 		item: _SteamItem | None = None
 		try:
-			item = getSteamGameInfo(asset.game.name, overrides, debug)
+			item = getSteamGameInfo(asset, overrides, debug)
 			if debug:
 				print(f"'{asset.game.name}' detected as Steam ID", item.id)
 		except (ValueError) as e:

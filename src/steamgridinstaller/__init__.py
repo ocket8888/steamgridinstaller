@@ -35,8 +35,13 @@ def main() -> int:
 	parser.add_argument(
 		"-O",
 		"--override",
-		help="Format: 'name=ID'. Overrides an association between a (SteamgridDB) game name and a numeric (Steam) game ID. This is useful when the closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we won't be able to find it through the Steam API, or for non-Steam games.",
+		help="Overrides an association between a (SteamgridDB) game name or numeric asset ID and a numeric (Steam) game ID. " +
+			"This is useful when the closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we won't be able to find it through the Steam API, or for non-Steam games. " +
+			"Using a numeric asset ID to override an asset for a steam ID can be useful when two games in your library share a name (e.g. Dead Space and its 2022 remake with the same name) or " +
+			"when you want most assets associated with a particular game to be used for that game but you want to use a background listed for it with some other game.",
+		nargs=2,
 		action="append",
+		metavar=("GAME_NAME_OR_ASSET_ID", "STEAM_ID")
 	)
 	parser.add_argument("-v", "--version", action="version", version=__version__, help="Print version information and exit.")
 	parser.add_argument("--debug", help="Logs a lot of debugging information to the console.", action="store_true", default=False)
@@ -48,21 +53,22 @@ def main() -> int:
 		print(e, file=_sys.stderr)
 		return 3
 
-	overrides = dict[str, int]()
-	for override in args.override if args.override else []:
-		kv = override.split("=")
-		if len(kv) != 2:
-			print("invalid override:", override, file=_sys.stderr)
-			print("format is 'name=ID'", file=_sys.stderr)
-			return 4
+	overrides = dict[str | int, int]()
+	for (override, ID) in args.override if args.override else []:
+		key: str | int
 		try:
-			value = int(kv[1].strip(), 10)
+			key = int(override)
+		except ValueError:
+			key = override
+
+		try:
+			value = int(ID, 10)
 		except ValueError as e:
-			print("invalid override '", override, "': ", e, sep="", file=_sys.stderr)
-			print("game ID must be numeric", file=_sys.stderr)
+			print("invalid override '", override, " -> ", ID, "': ", e, sep="", file=_sys.stderr)
+			print("steam game ID must be numeric", file=_sys.stderr)
 			return 4
-		
-		overrides[kv[0]] = value
+
+		overrides[key] = value
 
 	if args.debug:
 		print("Overrides:")

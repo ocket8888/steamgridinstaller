@@ -2,7 +2,7 @@
 # This file is part of steamgridinstaller.
 # steamgridinstaller is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # steamgridinstaller is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>. 
+# You should have received a copy of the GNU General Public License along with steamgridinstaller. If not, see <https://www.gnu.org/licenses/>.
 
 from typing import NamedTuple, Literal
 from datetime import datetime
@@ -120,6 +120,32 @@ class GameInfo(NamedTuple):
 	types: list[None]
 	verified: bool
 
+	def withName(self: GameInfo, name: str) -> GameInfo:
+		"""
+		Returns a copy of the game with its name changed to the given value - to hopefully match Steam's name for it better.
+
+		>>> import datetime
+		>>> gi = GameInfo(1, "test", datetime.datetime(1, 1, 1, 0, 0), [], False)
+		>>> gi = gi.withName("quest")
+		>>> gi.id
+		1
+		>>> gi.name
+		'quest'
+		>>> gi.releaseDate
+		datetime.datetime(1, 1, 1, 0, 0)
+		>>> gi.types
+		[]
+		>>> gi.verified
+		False
+		"""
+		return GameInfo(
+			self.id,
+			name,
+			self.releaseDate,
+			self.types,
+			self.verified,
+		)
+
 	@staticmethod
 	def fromJSON(raw: object) -> GameInfo:
 		if not isinstance(raw, dict):
@@ -128,23 +154,23 @@ class GameInfo(NamedTuple):
 			raise ValueError(f"incorrect number of properties in asset gameinfo; expected: 5, got: {len(raw)}")
 
 		if "id" not in raw:
-			raise ValueError("game info missing required property 'id'")	
+			raise ValueError("game info missing required property 'id'")
 		if not isinstance(raw["id"], int):
 			raise TypeError("invalid type for game info property 'id'")
 
 		if "name" not in raw:
-			raise ValueError("game info missing required property 'name'")	
+			raise ValueError("game info missing required property 'name'")
 		if not isinstance(raw["name"], str):
 			raise TypeError("invalid type for game info property 'name'")
 
 		if "release_date" not in raw:
-			raise ValueError("game info missing required property 'release_date'")	
+			raise ValueError("game info missing required property 'release_date'")
 		if not isinstance(raw["release_date"], int):
 			raise TypeError("invalid type for game info property 'release_date'")
 		releaseDate = datetime.fromtimestamp(raw["release_date"])
 
 		if "types" not in raw:
-			raise ValueError("game info missing required property 'types'")	
+			raise ValueError("game info missing required property 'types'")
 		if not isinstance(raw["types"], list):
 			raise TypeError("invalid type for game info property 'types'")
 		types = list[None]()
@@ -154,7 +180,7 @@ class GameInfo(NamedTuple):
 			types.append(t)
 
 		if "verified" not in raw:
-			raise ValueError("game info missing required property 'verified'")	
+			raise ValueError("game info missing required property 'verified'")
 		if not isinstance(raw["verified"], bool):
 			raise TypeError("invalid type for game info property 'verified'")
 
@@ -200,13 +226,59 @@ class Asset(NamedTuple):
 	canReport: bool | None
 	canCollect: bool | None
 
+	def withName(self: Asset, name: str) -> Asset:
+		"""
+		Returns a copy of the Asset with the game name changed - to hopefully match Steam's name for it better.
+
+		>>> import datetime
+		>>> gi = GameInfo(1, "test", datetime.datetime.now(), [], False)
+		>>> a = Asset(1, "", 1, 1, False, False, None, "", "", "", False, False, 0, 0, 0, 0, False, datetime.datetime.now(), "", False, False, None, False, False, AssetAuthor("", "", "", []), gi, None, None, None, None, None, None)
+		>>> a = a.withName("quest")
+		>>> a.game.name
+		'quest'
+		"""
+		return Asset(
+			self.id,
+			self.style,
+			self.width,
+			self.height,
+			self.nsfw,
+			self.humor,
+			self.notes,
+			self.language,
+			self.url,
+			self.thumb,
+			self.lock,
+			self.epilepsy,
+			self.upvotes,
+			self.downvotes,
+			self.downloads,
+			self.hearts,
+			self.canVote,
+			self.date,
+			self.mime,
+			self.isAnimated,
+			self.isDeleted,
+			self.animationType,
+			self.processing,
+			self.showBoop,
+			self.author,
+			self.game.withName(name),
+			self.fakePng,
+			self.isUpvoted,
+			self.isDownvoted,
+			self.isHearted,
+			self.canReport,
+			self.canCollect,
+		)
+
 	@staticmethod
 	def fromJSON(raw: object) -> Asset:
 		if not isinstance(raw, dict):
 			raise TypeError("non-object given as an asset")
 		if len(raw) not in {26, 27, 31, 32}:
 			raise ValueError(f"incorrect number of properties in asset; expected: 26 or 27 or 31 or 322, got: {len(raw)}")
-		
+
 		if "id" not in raw:
 			raise ValueError("asset missing required property 'id'")
 		if not isinstance(raw["id"], int):
@@ -414,12 +486,12 @@ class FilterStyleMeta(NamedTuple):
 			raise TypeError("non-object given as response data filters style-type metadata")
 		if len(raw) != 1:
 			raise ValueError(f"incorrect number of properties in style-type filter metadata; expected: 1, got: {len(raw)}")
-		
+
 		if "count" not in raw:
 			raise ValueError("style-type filter metadata missing required 'count' property")
 		if not isinstance(raw["count"], int):
 			raise TypeError("invalid type for 'count' property of style-type filter metadata")
-		
+
 		return FilterStyleMeta(raw["count"])
 
 class FilterDimensionsMeta(NamedTuple):
@@ -432,12 +504,12 @@ class FilterDimensionsMeta(NamedTuple):
 			raise TypeError("non-object given as response data filters dimensions-type metadata")
 		if len(raw) != 2:
 			raise ValueError(f"incorrect number of properties in dimensions-type filters metadata; expected: 2, got: {len(raw)}")
-		
+
 		if "count" not in raw:
 			raise ValueError("dimensions-type filter metadata missing required 'count' property")
 		if not isinstance(raw["count"], int):
 			raise TypeError("invalid type for 'count' property of dimensions-type filter metadata")
-		
+
 		if "ratio" not in raw:
 			raise ValueError("dimensions-type filter metadata missing required 'ratio' property")
 		if not isinstance(raw["ratio"], list):
@@ -447,7 +519,7 @@ class FilterDimensionsMeta(NamedTuple):
 		for i, r in enumerate(raw["ratio"]):
 			if not isinstance(r, int):
 				raise TypeError(f"invalid type for element of dimensions-style filter metadata 'ratio' property at index {i}")
-		
+
 		return FilterDimensionsMeta((raw["ratio"][0], raw["ratio"][1]), raw["count"])
 
 class Filter(NamedTuple):
@@ -462,7 +534,7 @@ class Filter(NamedTuple):
 			raise TypeError("non-object given as response data filters")
 		if len(raw) != 4:
 			raise ValueError(f"incorrect number of properties in response data filters; expected: 6, got: {len(raw)}")
-		
+
 		if "style" not in raw:
 			raise ValueError("response data filters missing required property 'style'")
 		if not isinstance(raw["style"], dict):
@@ -539,7 +611,7 @@ class AssetResponseData(NamedTuple):
 			raise TypeError("non-object given as asset response data")
 		if len(raw) != 7:
 			raise ValueError(f"invalid number of properties in response data; expected: 5, got: {len(raw)}")
-		
+
 		if "has_hidden_assets" not in raw:
 			raise ValueError("response data missing required property 'has_hidden_assets'")
 		if not isinstance(raw["has_hidden_assets"], bool):
@@ -562,7 +634,7 @@ class AssetResponseData(NamedTuple):
 
 		if "filters" not in raw:
 			raise ValueError("response data missing required property 'filters'")
-		
+
 		if "limit" not in raw:
 			raise ValueError("response data missing required property 'limit'")
 		if not isinstance(raw["limit"], int):
@@ -598,15 +670,15 @@ class AssetResponse(NamedTuple):
 			raise TypeError("non-object given as asset response")
 		if len(raw) != 2:
 			raise ValueError(f"invalid number of properties in response; expected: 2, got: {len(raw)}")
-		
+
 		if "success" not in raw:
 			raise ValueError("asset response missing required property 'success'")
 		if not isinstance(raw["success"], bool):
 			raise TypeError("invalid type for 'success' property of asset response")
-		
+
 		if "data" not in raw:
 			raise ValueError("asset response missing required property 'data'")
-		
+
 		return AssetResponse(raw["success"], AssetResponseData.fromJSON(raw["data"]))
 
 class SteamPrice(NamedTuple):
@@ -650,17 +722,17 @@ class SteamPlatforms(NamedTuple):
 		if len(raw) != 3:
 			raise ValueError(f"invalid number of properties in steam game platforms; expected: 3, got: {len(raw)}")
 
-		if "windows" not in raw: 
+		if "windows" not in raw:
 			raise ValueError("steam game platforms missing required property 'windows'")
 		if not isinstance(raw["windows"], bool):
 			raise TypeError("invalid type for 'windows' property of steam game platforms")
 
-		if "mac" not in raw: 
+		if "mac" not in raw:
 			raise ValueError("steam game platforms missing required property 'mac'")
 		if not isinstance(raw["mac"], bool):
 			raise TypeError("invalid type for 'mac' property of steam game platforms")
 
-		if "linux" not in raw: 
+		if "linux" not in raw:
 			raise ValueError("steam game platforms missing required property 'linux'")
 		if not isinstance(raw["linux"], bool):
 			raise TypeError("invalid type for 'linux' property of steam game platforms")

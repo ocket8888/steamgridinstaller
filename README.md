@@ -31,11 +31,12 @@ must use the `-O`/`--override` option to manually specify the ID. Although I've 
 > place it there.
 > This must be the path to the directory containing Steam users - NOT the folder where you want the grids to go!
 
-`-O, --override OVERRIDE`
-> Format: `name=ID`.
-> Overrides an association between a (SteamgridDB) game name and a numeric (Steam) game ID. This is useful when the
-> closest match is incorrect or when a game is unlisted (e.g. *The 7th Guest*) and we won't be able to find it through
-> the Steam API, or for non-Steam games.
+`-O, --override GAME_NAME_OR_ASSET_ID STEAM_ID`
+> Overrides an association between a (SteamgridDB) game name or numeric asset ID and a numeric (Steam) game ID. This is useful when the
+> closest match is incorrect or when a game is unlisted (e.g. The 7th Guest) and we won't be able to find it through the Steam API, or
+> for non-Steam games. Using a numeric asset ID to override an asset for a steam ID can be useful when two games in your library share
+> a name (e.g. Dead Space and its 2022 remake with the same name) or when you want most assets associated with a particular game to be
+> used for that game but you want to use a background listed for it with some other game.
 
 `-v, --version`
 > Print version information and exit.
