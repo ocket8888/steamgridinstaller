@@ -161,7 +161,7 @@ def getAssets(collectionID: str, typ: _Literal["grid", "logo", "hero"], override
 		try:
 			item = getSteamGameInfo(asset.game.name, overrides)
 		except (ValueError) as e:
-			print("skipping apparent non-steam game '", asset.game.name, "': ", e, file=_sys.stderr, sep="")
+			print(f"Warning ('{asset.game.name}'): ", e, file=_sys.stderr, sep="")
 
 		assets.append((asset, item))
 
