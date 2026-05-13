@@ -87,9 +87,12 @@ def writeAsset(asset: _Asset, id: int, path: str, debug: bool, isLogo: bool = Fa
 		fname = f"{fname}p"
 	elif (asset.width == 3840 and asset.height == 1240) or (asset.width == 1920 and asset.height == 620):
 		if debug:
-			print("game", id, f"({asset.game.name}) is wide cover")
+			print("game", id, f"({asset.game.name}) is hero")
 		fname = f"{fname}_hero"
-	elif (asset.width != 920 or asset.height != 430) and (asset.width != 460 or asset.height != 215):
+	elif (asset.width == 920 and asset.height == 430) or (asset.width == 460 and asset.height == 215):
+		if debug:
+			print("game", id, f'({asset.game.name}) is wide cover')
+	else:
 		raise WriteAssetError(f"unsupported dimensions for game asset: {asset.height}x{asset.width}")
 
 	try:
